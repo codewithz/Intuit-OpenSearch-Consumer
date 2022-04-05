@@ -14,6 +14,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
+import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
@@ -74,8 +75,8 @@ public class OpenSearchConsumer {
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,groupId);
-        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest"); // earliest/latest/none
-
+        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"latest"); // earliest/latest/none
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,"false");
         //Create a Consumer
         KafkaConsumer<String,String> consumer=new KafkaConsumer<String, String>(properties);
 
@@ -123,6 +124,8 @@ public class OpenSearchConsumer {
             int recordCount=records.count();
             logger.info("RECIEVED "+recordCount+" records(s)");
 
+
+
             for(ConsumerRecord<String,String> record:records){
                 //Send the Record to OpenSearch
                 // to make records unique for OpenSearch, we will have to assign key
@@ -143,14 +146,19 @@ public class OpenSearchConsumer {
 
                 IndexResponse response=openSearchClient.index(indexRequest,RequestOptions.DEFAULT);
 
-                logger.info("Inserted 1 document in OpenSearch:"+response.getId());
+               // logger.info("Inserted 1 document in OpenSearch:"+response.getId());
             }
             catch (Exception e){
 
             }
             }
 
+            //Commit the offset after a batch is processed
+            consumer.commitSync();
+            logger.info("Offsets have been committed");
         }
+
+
 
         //5. Close the things
      //   openSearchClient.close();
