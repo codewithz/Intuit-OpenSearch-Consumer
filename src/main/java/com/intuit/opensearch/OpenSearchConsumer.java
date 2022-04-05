@@ -1,5 +1,7 @@
 package com.intuit.opensearch;
 
+
+
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -80,6 +82,8 @@ public class OpenSearchConsumer {
         return  consumer;
     }
 
+
+
     public static void main(String[] args) throws IOException {
 
         Logger logger= LoggerFactory.getLogger(OpenSearchConsumer.class.getName());
@@ -121,13 +125,29 @@ public class OpenSearchConsumer {
 
             for(ConsumerRecord<String,String> record:records){
                 //Send the Record to OpenSearch
+                // to make records unique for OpenSearch, we will have to assign key
+
+                //Strategy 1
+                String id=record.topic()+"_"+record.partition()+"_"+record.offset();
+
+                //Stratergy 2
+
+
+
+            try{
+
 
                 IndexRequest indexRequest=new IndexRequest("wikimedia")
-                        .source(record.value(), XContentType.JSON);
+                        .source(record.value(), XContentType.JSON)
+                        .id(id);
 
                 IndexResponse response=openSearchClient.index(indexRequest,RequestOptions.DEFAULT);
 
                 logger.info("Inserted 1 document in OpenSearch:"+response.getId());
+            }
+            catch (Exception e){
+
+            }
             }
 
         }
